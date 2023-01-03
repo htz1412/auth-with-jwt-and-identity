@@ -1,11 +1,12 @@
-﻿using AuthImplementation.DTOs;
+﻿using AuthImplementation.DataModels;
+using AuthImplementation.DTOs;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 
 namespace AuthImplementation.Services.Interfaces
 {
     public interface IAuthService
     {
-        Task<IdentityResult> RegisterUser(UserForRegistrationDto userForRegistration);
+        Task<IdentityResult> Register(UserForRegistrationDto userForRegistration);
+        Task<UserDataModel> Login(UserForAuthenticationDto userForAuthentication);
     }
 }

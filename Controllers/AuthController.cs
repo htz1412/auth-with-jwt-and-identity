@@ -14,10 +14,10 @@ namespace AuthImplementation.Controllers
             _authService = authService;
         }
 
-        [HttpPost("register-user")]
-        public async Task<IActionResult> RegisterUser([FromBody] UserForRegistrationDto userForRegistration)
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] UserForRegistrationDto userForRegistration)
         {
-            var result = await _authService.RegisterUser(userForRegistration);
+            var result = await _authService.Register(userForRegistration);
 
             if(result.Succeeded)
             {
@@ -25,6 +25,18 @@ namespace AuthImplementation.Controllers
             }
 
             return BadRequest(result.Errors);
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] UserForAuthenticationDto userForAuthentication)
+        {
+            var userModel = await _authService.Login(userForAuthentication);
+            if(userModel == null)
+            {
+                return BadRequest("Invalid email or password");
+            }
+
+            return Ok(userModel);
         }
     }
 }
