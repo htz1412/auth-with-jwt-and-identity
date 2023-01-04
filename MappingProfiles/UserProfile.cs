@@ -9,7 +9,7 @@ namespace AuthImplementation.MappingProfiles
     {
         public UserProfile()
         {
-            CreateMap<User, UserForRegistrationDto>();
+            CreateMap<User, UserForRegistrationDto>().ReverseMap();
             CreateMap<User, UserDataModel>();
         }
     }

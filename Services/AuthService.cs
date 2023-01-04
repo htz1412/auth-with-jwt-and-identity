@@ -38,7 +38,7 @@ namespace AuthImplementation.Services
         public async Task<UserDataModel> Login(UserForAuthenticationDto userForAuthentication)
         {
             var user = await Validate(userForAuthentication);
-            UserDataModel userDataModel = null;
+            UserDataModel? userDataModel = null;
 
             if (user != null)
             {
@@ -77,6 +77,7 @@ namespace AuthImplementation.Services
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, user.UserName),
+                new Claim(ClaimTypes.Email, user.Email),
             };
 
             var roles = await _userManager.GetRolesAsync(user);

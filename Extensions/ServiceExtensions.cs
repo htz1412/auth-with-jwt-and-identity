@@ -62,6 +62,7 @@ namespace AuthImplementation.Extensions
                     ValidIssuer = issuer,
                     ValidAudience = audience,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signInKey)),
+                    ClockSkew = TimeSpan.Zero
                 };
             });
         }
