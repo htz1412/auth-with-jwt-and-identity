@@ -94,12 +94,12 @@ namespace AuthImplementation.Services
             var jwtSettings = _configuration.GetSection("JWT");
             var jwtSecurityToken = new JwtSecurityToken
             (
-                issuer: jwtSettings["Issuer"],
-                audience: jwtSettings["Audience"], 
-                claims: claims, 
-                notBefore: DateTime.UtcNow, 
-                expires: DateTime.UtcNow.AddMinutes(Convert.ToDouble(jwtSettings["ExpiresInMinutes"])), 
-                signingCredentials: signingCredentials
+                jwtSettings["Issuer"],
+                jwtSettings["Audience"], 
+                claims, 
+                DateTime.UtcNow, 
+                DateTime.UtcNow.AddMinutes(Convert.ToDouble(jwtSettings["ExpiresInMinutes"])), 
+                signingCredentials
             );
             return jwtSecurityToken;
         }
