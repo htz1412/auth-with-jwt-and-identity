@@ -1,10 +1,11 @@
 ﻿using AuthImplementation.Configurations;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace AuthImplementation.Entities
 {
-    public class MyDbContext : IdentityDbContext<User>
+    public class MyDbContext : IdentityDbContext<User, IdentityRole<int>, int>
     {
         public MyDbContext(DbContextOptions options) : base(options)
         {

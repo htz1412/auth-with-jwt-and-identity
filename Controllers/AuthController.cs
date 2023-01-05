@@ -30,7 +30,7 @@ namespace AuthImplementation.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] UserForAuthenticationDto userForAuthentication)
         {
-            var userModel = await _authService.Login(userForAuthentication);
+            var userModel = await _authService.Login(userForAuthentication, true);
             if(userModel == null)
             {
                 return BadRequest("Invalid email or password");

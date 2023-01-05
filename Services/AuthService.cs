@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace AuthImplementation.Services
@@ -35,20 +36,59 @@ namespace AuthImplementation.Services
             return result;
         }
 
-        public async Task<UserDataModel> Login(UserForAuthenticationDto userForAuthentication)
+        public async Task<UserDataModel> Login(UserForAuthenticationDto userForAuthentication, bool populateRefreshTokenExpiryTime = false)
         {
             var user = await Validate(userForAuthentication);
-            UserDataModel? userDataModel = null;
 
-            if (user != null)
+            if (user == null)
             {
-                userDataModel = new UserDataModel();
-                _mapper.Map(user, userDataModel);
-                var signingCredentials = GetSigningCredentials();
-                var claims = await GetClaimsForUser(user);
-                var token = GenerateTokenOptions(signingCredentials, claims);
-                userDataModel.AccessToken = new JwtSecurityTokenHandler().WriteToken(token);
+                return null;
             }
+
+            var userDataModel = await CreateTokenForUser(user, false);
+            return userDataModel;
+        }
+
+        public async Task<UserDataModel> RefreshToken(RefreshTokenDto refreshTokenDto)
+        {
+            var claimPrinciple = GetPrincipalFromExpiredToken(refreshTokenDto.AccessToken);
+
+            if(claimPrinciple == null)
+            {
+                return null;
+            }
+
+            var user = await _userManager.FindByNameAsync(claimPrinciple.Identity.Name);
+
+            if(user == null)
+            {
+                return null;
+            }
+
+            var userDataModel = await CreateTokenForUser(user);
+            return userDataModel;
+        }
+
+        private async Task<UserDataModel> CreateTokenForUser(User user, bool populateRefreshTokenExpiryTime = false)
+        {
+            var signingCredentials = GetSigningCredentials();
+            var claims = await GetClaimsForUser(user);
+            var token = GenerateTokenOptions(signingCredentials, claims);
+            var refreshToken = GenerateRefreshToken();
+
+            var userDataModel = _mapper.Map<UserDataModel>(user);
+            userDataModel.RefreshToken = refreshToken;
+            userDataModel.AccessToken = new JwtSecurityTokenHandler().WriteToken(token);
+
+            user.RefreshToken = refreshToken;
+
+            if (populateRefreshTokenExpiryTime)
+            {
+                var expiresInDays = Convert.ToDouble(_configuration["RefreshTokenExpiresInDays"]);
+                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(expiresInDays);
+            }
+
+            await _userManager.UpdateAsync(user);
 
             return userDataModel;
         }
@@ -56,13 +96,14 @@ namespace AuthImplementation.Services
         private async Task<User> Validate(UserForAuthenticationDto userForAuthentication)
         {
             var user = await _userManager.FindByEmailAsync(userForAuthentication.Email);
-            if (user != null)
+
+            if (user == null)
             {
-                var isValid = await _userManager.CheckPasswordAsync(user, userForAuthentication.Password);
-                return isValid ? user : null;
+                return null;
             }
 
-            return user;
+            var isValid = await _userManager.CheckPasswordAsync(user, userForAuthentication.Password);
+            return isValid ? user : null;
         }
 
         private SigningCredentials GetSigningCredentials()
@@ -95,13 +136,50 @@ namespace AuthImplementation.Services
             var jwtSecurityToken = new JwtSecurityToken
             (
                 jwtSettings["Issuer"],
-                jwtSettings["Audience"], 
-                claims, 
-                DateTime.UtcNow, 
-                DateTime.UtcNow.AddMinutes(Convert.ToDouble(jwtSettings["ExpiresInMinutes"])), 
+                jwtSettings["Audience"],
+                claims,
+                DateTime.UtcNow,
+                DateTime.UtcNow.AddMinutes(Convert.ToDouble(jwtSettings["ExpiresInMinutes"])),
                 signingCredentials
             );
             return jwtSecurityToken;
+        }
+
+        private static string GenerateRefreshToken()
+        {
+            var randomNumber = new Byte[32];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomNumber);
+            return Convert.ToBase64String(randomNumber);
+        }
+
+        private ClaimsPrincipal GetPrincipalFromExpiredToken(string accessToken)
+        {
+            var jwtSettings = _configuration.GetSection("JWT");
+            var signInKey = jwtSettings["SignInKey"];
+
+            var tokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+
+                ValidIssuer = jwtSettings["Issuer"],
+                ValidAudience = jwtSettings["Audience"],
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signInKey)),
+                ClockSkew = TimeSpan.Zero
+            };
+
+            var claimsPrincipal = new JwtSecurityTokenHandler().ValidateToken(accessToken, tokenValidationParameters, out var securityToken);
+            var jwtSecurityToken = securityToken as JwtSecurityToken;
+
+            if (jwtSecurityToken == null || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+            {
+                return null;
+            }
+
+            return claimsPrincipal;
         }
     }
 }
