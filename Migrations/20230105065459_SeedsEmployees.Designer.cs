@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AuthImplementation.Migrations
 {
     [DbContext(typeof(MyDbContext))]
-    [Migration("20230104101131_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20230105065459_SeedsEmployees")]
+    partial class SeedsEmployees
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -140,22 +140,6 @@ namespace AuthImplementation.Migrations
                         .HasDatabaseName("RoleNameIndex");
 
                     b.ToTable("AspNetRoles", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            ConcurrencyStamp = "78feb072-6971-48d7-95ab-07c861cc25b3",
-                            Name = "Manager",
-                            NormalizedName = "MANAGER"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            ConcurrencyStamp = "600b3b03-96f3-41d2-beb6-b71a1ef6f03a",
-                            Name = "Administrator",
-                            NormalizedName = "ADMINISTRATOR"
-                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>

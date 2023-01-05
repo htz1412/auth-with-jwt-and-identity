@@ -1,5 +1,4 @@
-﻿using AuthImplementation.Configurations;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,7 +12,6 @@ namespace AuthImplementation.Entities
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
-            builder.ApplyConfiguration(new RoleConfigurator());
             base.OnModelCreating(builder);
         }
 
